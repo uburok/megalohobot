@@ -1,19 +1,14 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 
+# Git directory
+.git/
+
 # PyCharm directory
 .idea/
 
-# Environments
-.env
-.venv
-env/
-venv/
-
 # Logs
-*.log
+**/*.log
 
-# Databases
-*.db
-*.sqlite
-*.sqlite3
+# Examples
+**/*.example
