@@ -10,7 +10,7 @@ load_dotenv(".env")
 API_TOKEN = os.getenv("MLB_TELEGRAM_TOKEN")
 BOT_OWNER_ID = int(os.getenv("MLB_TELEGRAM_BOT_OWNER"))
 
-DB_NAME = "db.sqlite3"
+DB_NAME = "/var/lib/megalohobot.sqlite3"
 
 
 def _get_text_from_say_command(update: Update, command):
@@ -24,12 +24,24 @@ def _get_text_from_say_command(update: Update, command):
     return text, entities
 
 
-def get_host_ip(update: Update, _: CallbackContext):
+# Bot Handlers
+def help_handler(update: Update, _: CallbackContext):
+    if update.message.chat.id == BOT_OWNER_ID:
+        message = """Привет! Меня зовут мегалохобот и на данный момент я поддерживаю следующие команды:
+        /help - выведу вот этот текст.
+        /say <текст> - могу сказать что--нибудь от своего имени. Поддерживаю обращения через собаку, ссылки и т.п.
+        /ip - скажу свой айпишник, но только своему хозяину в привате."""
+        update.message.reply_text(message)
+    else:
+        update.message.reply_text("Я тебя не понимаю:(")
+
+
+def ip_handler(update: Update, _: CallbackContext):
     if update.message.chat.id == BOT_OWNER_ID:
         host_ip = get('https://api.ipify.org').text
         update.message.reply_text(host_ip)
     else:
-        update.message.reply_text("Я тебя не понимаю:(")
+        update.message.reply_text("Это конфиденциальная инфа, я её могу озвучить только в привате с хозяином:(")
 
 
 def say_handler(update: Update, _: CallbackContext) -> None:
@@ -48,8 +60,9 @@ def main():
     dispatcher = updater.dispatcher
 
     # Adding command handlers
-    dispatcher.add_handler(CommandHandler("ip", get_host_ip))
+    dispatcher.add_handler(CommandHandler("help", help_handler))
     dispatcher.add_handler(CommandHandler("say", say_handler))
+    dispatcher.add_handler(CommandHandler("ip", ip_handler))
 
     # Starting bot
     updater.start_polling(drop_pending_updates=True)
