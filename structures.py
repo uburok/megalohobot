@@ -8,6 +8,7 @@ class Chat:
     chat_type: str
     chat_desc: str = ""
 
+
 @dataclass
 class User:
     user_id: int
@@ -44,17 +45,3 @@ CREATE_TABLE_USERS_IN_CHATS_QUERY = """
         chat_id INTEGER NOT NULL REFERENCES chats(id),
         congrats_in_chat INTEGER)    
     """
-
-
-conn = sqlite3.connect("megalohobot.db")
-cur = conn.cursor()
-
-
-def db_create_chat(chat: Chat):
-    pass
-
-
-def db_create_user(user: User):
-    pass
-
-
