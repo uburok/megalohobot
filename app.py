@@ -1,6 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from os import getenv
-from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 from requests import get
@@ -45,7 +44,7 @@ def help_handler(update: Update, _: CallbackContext):
         return
     message = """Привет! Меня зовут megalohobot и на данный момент я поддерживаю следующие команды:
   Общее:
-    /help, /info, /? - вывод этой справки.
+    /help, /info - вывод этой справки.
     /start - инициализация чата (для работы с событиями и т.п.).
     /stop - прекратить работу в чате (все данные сохранятся). Возобновить работу можно командой /start.
     /ip - сказать свой айпишник (только владельцу бота в привате).
@@ -199,7 +198,7 @@ def del_event_handler(update: Update, context: CallbackContext):
 def remind_events_worker(context: CallbackContext):
     db = MegalohobotDB(settings.DB_PATH)
     events = db.get_all_events()
-    now = datetime.now(ZoneInfo(settings.DEFAULT_REMIND_TZ)).replace(second=0, microsecond=0)
+    now = datetime.utcnow().replace(second=0, microsecond=0) + timedelta(hours=settings.DEFAULT_REMIND_TZ)
     now_events = []
     for i in events:
         event_time = datetime.strptime(f"{i.date} {i.time}", "%d.%m %H:%M").replace(year=now.year)
@@ -226,7 +225,6 @@ def main():
     # Adding command handlers
     dispatcher.add_handler(CommandHandler("help", help_handler))
     dispatcher.add_handler(CommandHandler("info", help_handler))
-    dispatcher.add_handler(CommandHandler("?", help_handler))
     dispatcher.add_handler(CommandHandler("start", start_handler))
     dispatcher.add_handler(CommandHandler("stop", stop_handler))
     dispatcher.add_handler(CommandHandler("ip", ip_handler))
