@@ -1,5 +1,6 @@
 from datetime import datetime
 from os import getenv
+from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 from requests import get
@@ -198,7 +199,7 @@ def del_event_handler(update: Update, context: CallbackContext):
 def remind_events_worker(context: CallbackContext):
     db = MegalohobotDB(settings.DB_PATH)
     events = db.get_all_events()
-    now = datetime.now().replace(second=0, microsecond=0)
+    now = datetime.now(ZoneInfo(settings.DEFAULT_REMIND_TZ)).replace(second=0, microsecond=0)
     now_events = []
     for i in events:
         event_time = datetime.strptime(f"{i.date} {i.time}", "%d.%m %H:%M").replace(year=now.year)
