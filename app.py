@@ -14,17 +14,23 @@ from structures import Chat, Event
 # All confidential info is stored as environment vars
 load_dotenv(".env")
 API_TOKEN = getenv("MLB_TELEGRAM_TOKEN")
+BOT_NAME = "@" + getenv("MLB_BOT_NAME")
 BOT_OWNER_ID = int(getenv("MLB_TELEGRAM_BOT_OWNER"))
 
 
-def _get_text_from_say_command(update: Update, command):
-    command_len = len(command)
+def _get_text_from_say_command(update: Update):
+    command = update.message.text
+    if BOT_NAME.lower() in command.lower():
+        command_len = len(BOT_NAME) + 5
+    else:
+        command_len = 5
     text = update.message.text[command_len:]
     entities = []
     for i in update.message.entities:
         if i.type != "bot_command":
             i.offset -= command_len
             entities.append(i)
+    text = text.strip()
     return text, entities
 
 
@@ -100,15 +106,29 @@ def say_handler(update: Update, _: CallbackContext):
         return
     db = MegalohobotDB(settings.DB_PATH)
     chat = Chat(update.effective_chat.id)
+
+    if update.effective_chat.type not in ("group", "supergroup", "channel"):
+        update.effective_chat.send_message("Я не поддерживаю эту команду в приватных чатах :(")
+        return
+
     if not db.check_chat_status(chat):
         update.effective_message.reply_text("Меня выключили или забыли запустить в этом чате. Скомандуйте /start, чтобы я смог начать работу.")
         return
-    if update.effective_chat.type in ("group", "supergroup", "channel"):
-        text, entities = _get_text_from_say_command(update, "/say ")
-        update.effective_message.delete()
+
+    text, entities = _get_text_from_say_command(update)
+    if not text:
+        text = "Мне нечего тебе ответить. Напиши в запросе, что сказать."
         update.effective_chat.send_message(text=text, entities=entities)
-    else:
-        update.effective_chat.send_message("Я не поддерживаю эту команду в приватных чатах :(")
+        return
+
+    try:
+        update.effective_message.delete()
+    except Exception:
+        text = "Я не могу удалить твое сообщение. Видимо, прав не хватает, дайте права на удаление сообщений."
+        update.effective_chat.send_message(text=text, entities=entities)
+        return
+
+    update.effective_chat.send_message(text=text, entities=entities)
 
 
 def events_handler(update: Update, _: CallbackContext):
@@ -120,6 +140,7 @@ def events_handler(update: Update, _: CallbackContext):
         update.effective_message.reply_text("Меня выключили или забыли запустить в этом чате. Скомандуйте /start, чтобы я смог начать работу.")
         return
     events = db.get_chat_events(chat)
+    events.sort(key=lambda x: datetime.strptime(x.date, "%d.%m"))
     if not events:
         msg = "В этом чате пока нет событий."
     else:
