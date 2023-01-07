@@ -42,9 +42,9 @@ def _is_valid_date(date_text):
 def help_handler(update: Update, _: CallbackContext):
     if not update.effective_chat:  # Bypass non-chat updates (inline queries, polls etc)
         return
-    message = """Привет! Меня зовут megalohobot и на данный момент я поддерживаю (а может и нет) следующие команды:
+    message = """Привет! Меня зовут megalohobot и на данный момент я поддерживаю следующие команды:
   Общее:
-    /help - вывод этой справки.
+    /help, /info, /? - вывод этой справки.
     /start - инициализация чата (для работы с событиями и т.п.).
     /stop - прекратить работу в чате (все данные сохранятся). Возобновить работу можно командой /start.
     /ip - сказать свой айпишник (только владельцу бота в привате).
@@ -52,9 +52,7 @@ def help_handler(update: Update, _: CallbackContext):
   Работа с событиями:
     /events - посмотреть все события чата
     /add_event <date> <title> - добавить событие, формат даты дд.мм (напр., "/add_event 01.01 Новый год!!!")
-    /del_event <date> <title> - удалить событие
-  ПОКА НЕ РЕАЛИЗОВАНО:
-    /reminders - работа с напоминаниями"""
+    /del_event <date> <title> - удалить событие"""
     update.effective_chat.send_message(message)
 
 
@@ -226,6 +224,8 @@ def main():
 
     # Adding command handlers
     dispatcher.add_handler(CommandHandler("help", help_handler))
+    dispatcher.add_handler(CommandHandler("info", help_handler))
+    dispatcher.add_handler(CommandHandler("?", help_handler))
     dispatcher.add_handler(CommandHandler("start", start_handler))
     dispatcher.add_handler(CommandHandler("stop", stop_handler))
     dispatcher.add_handler(CommandHandler("ip", ip_handler))
