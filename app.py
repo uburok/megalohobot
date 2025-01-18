@@ -10,6 +10,9 @@ from telegram.ext import Updater, CommandHandler, JobQueue
 import settings
 from db import MegalohobotDB
 from structures import Chat, Event
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 # All confidential info is stored as environment vars
 load_dotenv(".env")
@@ -217,25 +220,32 @@ def del_event_handler(update: Update, context: CallbackContext):
 
 
 def remind_events_worker(context: CallbackContext):
+    logger.debug("starting remind_events_worker")
+    now = datetime.utcnow().replace(second=0, microsecond=0) + timedelta(hours=settings.DEFAULT_REMIND_TZ)
     db = MegalohobotDB(settings.DB_PATH)
     events = db.get_all_events()
-    now = datetime.utcnow().replace(second=0, microsecond=0) + timedelta(hours=settings.DEFAULT_REMIND_TZ)
+    logger.debug(f"datetime: {now}, events: {events}")
     now_events = []
     for i in events:
         event_time = datetime.strptime(f"{i.date} {i.time}", "%d.%m %H:%M").replace(year=now.year)
         if event_time == now:
             now_events.append(i)
+            logger.debug(f"event {i} appended for reminding")
     if now_events:
         chats = set((i.chat_id for i in now_events))
+        logger.debug(f"chats for reminding: {chats}")
         for chat in chats:
             if not db.check_chat_status(Chat(chat)):
+                logger.debug(f"chat {chat} is disabled, skipping")
                 continue
             greeting = f"Вспомним, что сегодня у нас особенный день. Вот что у меня записано:\n"
             for event in now_events:
                 if event.chat_id == chat:
                     greeting += event.title + "\n"
+                    logger.debug(f"event {event} appended to greeting")
             greeting += "*Поздравим же всех причастных!!!*"
             context.dispatcher.bot.send_message(chat, greeting, parse_mode="Markdown")
+            logger.debug(f"message sent to chat {chat}: {greeting}")
 
 
 def main():
