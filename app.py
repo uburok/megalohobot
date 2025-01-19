@@ -220,11 +220,10 @@ def del_event_handler(update: Update, context: CallbackContext):
 
 
 def remind_events_worker(context: CallbackContext):
-    logger.debug("starting remind_events_worker")
     now = datetime.utcnow().replace(second=0, microsecond=0) + timedelta(hours=settings.DEFAULT_REMIND_TZ)
     db = MegalohobotDB(settings.DB_PATH)
     events = db.get_all_events()
-    logger.debug(f"datetime: {now}, events: {events}")
+    logger.debug(f"starting remind_events_worker, datetime: {now}")
     now_events = []
     for i in events:
         event_time = datetime.strptime(f"{i.date} {i.time}", "%d.%m %H:%M").replace(year=now.year)
@@ -244,8 +243,11 @@ def remind_events_worker(context: CallbackContext):
                     greeting += event.title + "\n"
                     logger.debug(f"event {event} appended to greeting")
             greeting += "*Поздравим же всех причастных!!!*"
-            context.dispatcher.bot.send_message(chat, greeting, parse_mode="Markdown")
-            logger.debug(f"message sent to chat {chat}: {greeting}")
+            try:
+                context.dispatcher.bot.send_message(chat, greeting, parse_mode="Markdown")
+                logger.debug(f"message sent to chat {chat}: {greeting}")
+            except Exception as e:
+                logger.debug(f"error sending msg {greeting}: {e}")
 
 
 def main():
